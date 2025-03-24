@@ -1,0 +1,79 @@
+/* --- Reset CSS --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #f9f9f9; /* Fond légèrement grisé */
+    color: #333; /* Texte noir */
+    line-height: 1.6;
+    padding: 2rem;
+}
+
+/* --- Conteneur Principal --- */
+.auth-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+/* --- Titre --- */
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+/* --- Informations de la Garantie --- */
+.garantie-info {
+    margin-bottom: 2rem;
+}
+
+.garantie-info p {
+    margin-bottom: 0.5rem;
+}
+
+.garantie-info strong {
+    font-weight: bold;
+}
+
+/* --- Formulaire --- */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+label {
+    font-weight: bold;
+}
+
+input,
+textarea {
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+button {
+    background-color: #1775F1;
+    color: white;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0C5FCD;
+}

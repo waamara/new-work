@@ -1,0 +1,274 @@
+/* garantie.css - Revised for extremely wide tables with sidebar */
+
+/* Base styles and variables */
+:root {
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --secondary-color: #f3f4f6;
+    --text-color: #1f2937;
+    --border-color: #e5e7eb;
+    --danger-color: #ef4444;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --radius: 0.375rem;
+  }
+  
+  /* General styles */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.5;
+    color: var(--text-color);
+    background-color: #f9fafb;
+  }
+  
+  main {
+    padding: 1rem;
+    width: 100%;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+  }
+  
+  /* Header section with title and add button */
+  main > div {
+    background-color: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    position: relative;
+  }
+  
+  /* Title and button container */
+  .header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* Add button styling */
+  .ajoutergar {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .ajoutergar:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  /* Table container with horizontal scroll */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 1rem;
+    position: relative;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+  }
+  
+  /* Table styling */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    min-width: 100%;
+  }
+  
+  thead {
+    background-color: var(--secondary-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  th {
+    text-align: left;
+    padding: 0.75rem 0.5rem;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+  }
+  
+  td {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+  }
+  
+  tbody tr:hover {
+    background-color: rgba(243, 244, 246, 0.5);
+  }
+  
+  /* Compact the table cells */
+  th, td {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Action buttons container */
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  /* Action buttons in the table */
+  td form {
+    margin: 0;
+  }
+  
+  td input[type="text"] {
+    display: none; /* Hide the ID inputs */
+  }
+  
+  td button {
+    padding: 0.375rem 0.5rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Different button styles */
+  td form:nth-child(1) button {
+    background-color: var(--primary-color);
+    color: white;
+  }
+  
+  td form:nth-child(1) button:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  td form:nth-child(2) button {
+    background-color: var(--warning-color);
+    color: white;
+  }
+  
+  td form:nth-child(2) button:hover {
+    background-color: #d97706;
+  }
+  
+  td form:nth-child(3) button {
+    background-color: var(--success-color);
+    color: white;
+  }
+  
+  td form:nth-child(3) button:hover {
+    background-color: #059669;
+  }
+  
+  td form:nth-child(4) button {
+    background-color: var(--danger-color);
+    color: white;
+  }
+  
+  td form:nth-child(4) button:hover {
+    background-color: #dc2626;
+  }
+  
+  /* Column toggle controls */
+  .column-controls {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .column-toggle {
+    background-color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .column-toggle:hover {
+    background-color: #e5e7eb;
+  }
+  
+  .column-toggle.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+  
+  /* Empty state styling */
+  tbody tr td[colspan] {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+    white-space: normal;
+  }
+  
+  /* Sticky first column for better context */
+  table th:first-child,
+  table td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: white;
+    z-index: 5;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+  }
+  
+  table th:first-child {
+    background-color: var(--secondary-color);
+  }
+  
+  /* Sticky last column (actions) */
+  table th:last-child,
+  table td:last-child {
+    position: sticky;
+    right: 0;
+    background-color: white;
+    z-index: 5;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+  }
+  
+  table th:last-child {
+    background-color: var(--secondary-color);
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    /* Make buttons more compact on smaller screens */
+    td button {
+      padding: 0.25rem 0.375rem;
+      font-size: 0.7rem;
+    }
+    
+    /* Adjust padding for smaller screens */
+    th, td {
+      padding: 0.5rem 0.375rem;
+    }
+  }
