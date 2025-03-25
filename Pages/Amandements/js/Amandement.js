@@ -6,16 +6,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("AmandementForm");
     const tableBody = document.getElementById("amandementsTableBody");
 
+    // Fields to toggle visibility
+    const datePronongationField = document.getElementById("DatePronongation").closest(".form-group");
+    const montantField = document.getElementById("Montant").closest(".form-group");
+
     // Function to update the table dynamically
     function updateTable(amendments) {
         tableBody.innerHTML = ""; // Clear existing rows
-    
+
         amendments.forEach((amendment) => {
             const row = document.createElement("tr");
-    
+
             row.innerHTML = `
                 <td>${amendment.id}</td>
-                <td>${amendment.num_amd}</td> <!-- Display the manually entered num_amd -->
+                <td>${amendment.num_amd}</td>
                 <td>${amendment.date_sys}</td>
                 <td>${amendment.date_prorogation || 'N/A'}</td>
                 <td>${amendment.montant_amd || 'N/A'}</td>
@@ -31,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </td>
             `;
-    
+
             tableBody.appendChild(row);
         });
     }
@@ -63,6 +67,23 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.style.display = "none";
     });
 
+    // Toggle fields based on the selected amendment type
+    const typeAmandement = document.getElementById("TypeAmandement");
+    typeAmandement.addEventListener("change", () => {
+        const selectedType = typeAmandement.value;
+
+        // Reset visibility
+        datePronongationField.style.display = "block";
+        montantField.style.display = "block";
+
+        // Hide fields based on the selected type
+        if (selectedType == 2) { // Augmentation Montant
+            datePronongationField.style.display = "none";
+        } else if (selectedType == 3) { // Prolongation
+            montantField.style.display = "none";
+        }
+    });
+
     // Form submission handling
     form.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -75,21 +96,16 @@ document.addEventListener("DOMContentLoaded", () => {
         let isValid = true;
 
         // Validate Type Amandement
-        const typeAmandement = document.getElementById("TypeAmandement");
         if (!typeAmandement || !typeAmandement.value) {
-            const message = document.querySelector(
-                "#TypeAmandement + .validation-message"
-            );
+            const message = document.querySelector("#TypeAmandement + .validation-message");
             if (message) message.style.display = "block";
             isValid = false;
         }
 
-        // Validate Montant
-        const NumAmandement = document.getElementById("NumAmandement");
-        if (!NumAmandement || !NumAmandement.value) {
-            const message = document.querySelector(
-                "#NumAmandement + .validation-message"
-            );
+        // Validate Num Amandement
+        const numAmandement = document.getElementById("NumAmandement");
+        if (!numAmandement || !numAmandement.value) {
+            const message = document.querySelector("#NumAmandement + .validation-message");
             if (message) message.style.display = "block";
             isValid = false;
         }
@@ -97,19 +113,29 @@ document.addEventListener("DOMContentLoaded", () => {
         // Validate Date Amandement
         const dateAmandement = document.getElementById("DateAmandement");
         if (!dateAmandement || !dateAmandement.value) {
-            const message = document.querySelector(
-                "#DateAmandement + .validation-message"
-            );
+            const message = document.querySelector("#DateAmandement + .validation-message");
             if (message) message.style.display = "block";
             isValid = false;
         }
 
-        // Validate Date Pronongation
+        // Validate Date Pronongation (only if visible)
         const datePronongation = document.getElementById("DatePronongation");
-        if (!datePronongation || !datePronongation.value) {
-            const message = document.querySelector(
-                "#DatePronongation + .validation-message"
-            );
+        if (
+            datePronongationField.style.display !== "none" && // Check if field is visible
+            (!datePronongation || !datePronongation.value)
+        ) {
+            const message = document.querySelector("#DatePronongation + .validation-message");
+            if (message) message.style.display = "block";
+            isValid = false;
+        }
+
+        // Validate Montant (only if visible)
+        const montant = document.getElementById("Montant");
+        if (
+            montantField.style.display !== "none" && // Check if field is visible
+            (!montant || !montant.value)
+        ) {
+            const message = document.querySelector("#Montant + .validation-message");
             if (message) message.style.display = "block";
             isValid = false;
         }
@@ -130,14 +156,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 message.textContent = "Le fichier doit être au format PDF.";
                 message.style.display = "block";
             }
-            isValid = false;
-        }
-
-        // Validate Montant
-        const montant = document.getElementById("Montant");
-        if (!montant || !montant.value) {
-            const message = document.querySelector("#Montant + .validation-message");
-            if (message) message.style.display = "block";
             isValid = false;
         }
 
