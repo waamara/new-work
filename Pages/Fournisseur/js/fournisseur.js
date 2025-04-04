@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch fournisseurs from the database
     async function fetchFournisseurs() {
         try {
-            const response = await fetch('../../Backend/get_fournisseurs.php');
+            const response = await fetch('/PFE_SONATRACH_DP/Pages/Fournisseur/get_fournisseurs.php');
             if (!response.ok) throw new Error('Server error');
 
             const data = await response.json();
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch countries from the backend
     async function fetchCountries() {
         try {
-            const response = await fetch('../../Backend/get_pays.php');
+            const response = await fetch('/PFE_SONATRACH_DP/Pages/Fournisseur/get_pays.php');
             if (!response.ok) throw new Error('Server error');
 
             const data = await response.json();
@@ -126,13 +126,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
 
             if (id) {
-                response = await fetch('../../Backend/update_fournisseur.php', {
+                response = await fetch('/PFE_SONATRACH_DP/Pages/Fournisseur/update_fournisseur.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestData)
                 });
             } else {
-                response = await fetch('../../Backend/add_fournisseur.php', {
+                response = await fetch('/PFE_SONATRACH_DP/Pages/Fournisseur/add_fournisseur.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestData)
