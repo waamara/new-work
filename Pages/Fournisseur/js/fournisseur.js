@@ -216,17 +216,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         `).join('');
 
         // Attach Edit Handlers
+        // Attach Edit Handlers
         document.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 const id = e.target.closest('button').dataset.id;
                 const f = fournisseurs.find(f => f.id == id);
+
+                console.log("Fournisseur Data:", f); // Log the fournisseur object
 
                 document.getElementById('modalTitle').textContent = 'Modifier Fournisseur';
                 document.getElementById('fournisseurId').value = f.id;
                 document.getElementById('codeFournisseur').value = f.code_fournisseur;
                 document.getElementById('nomFournisseur').value = f.nom_fournisseur;
                 document.getElementById('raisonSociale').value = f.raison_sociale || '';
-                document.getElementById('paysId').value = f.pays_id || ''; // Ensure this matches the dropdown value
+
+                // Ensure the dropdown is populated
+                const paysDropdown = document.getElementById('paysId');
+                if (paysDropdown.options.length <= 1) { // Check if only the placeholder option exists
+                    await fetchCountries(); // Fetch countries if not already loaded
+                }
+
+                // Set the selected country in the dropdown
+                if (f.pays_id && paysDropdown.querySelector(`option[value="${f.pays_id}"]`)) {
+                    paysDropdown.value = f.pays_id; // Set the value if the option exists
+                } else {
+                    paysDropdown.value = ''; // Default to the placeholder option
+                }
+
                 modal.style.display = 'flex';
             });
         });
