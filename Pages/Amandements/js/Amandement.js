@@ -4,13 +4,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeModal = document.querySelector(".close-btn");
     const closeBtn = document.getElementById("close");
     const form = document.getElementById("AmandementForm");
-    const tableBody = document.getElementById("amandementsTableBody");
+    const tableBody = document.getElementById("amendementsTableBody");
 
-    // Fields to toggle visibility
     const datePronongationField = document.getElementById("DatePronongation").closest(".form-group");
     const montantField = document.getElementById("Montant").closest(".form-group");
 
-    // Function to update the table dynamically
+    /**
+     * Function to dynamically update the amendments table
+     * @param {Array} amendments - List of amendments to display in the table
+     */
     function updateTable(amendments) {
         tableBody.innerHTML = ""; // Clear existing rows
 
@@ -25,13 +27,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${amendment.montant_amd || 'N/A'}</td>
                 <td>${amendment.type_label || 'Inconnu'}</td>
                 <td>
-                    ${amendment.document_path 
-                        ? `<a href="${amendment.document_path}" target="_blank">${amendment.nom_document || 'Voir le document'}</a>` 
-                        : 'Aucun document'}
+                    ${amendment.document_path
+                    ? `<a href="${amendment.document_path}" target="_blank">${amendment.nom_document || 'Voir le document'}</a>`
+                    : 'Aucun document'}
                 </td>
                 <td>   
                     <div>
-                        <button>Modifier</button>
+                        <button class="modify-btn" data-id="${amendment.id}">Modifier</button>
                     </div>
                 </td>
             `;
@@ -45,29 +47,37 @@ document.addEventListener("DOMContentLoaded", () => {
         updateTable(initialAmendments);
     }
 
-    // Open Modal
+    /**
+     * Open Modal for Adding a New Amendment
+     */
     addBtn.addEventListener("click", () => {
         modal.style.display = "flex";
+        document.querySelector("#modalTitle").textContent = "Ajouter Amendement";
+        form.reset();
+        form.querySelector('input[name="amendment_id"]')?.remove(); // Remove hidden amendment ID field
+        clearValidationMessages();
     });
 
-    // Close Modal
+    /**
+     * Close Modal
+     */
     closeModal.addEventListener("click", () => {
         modal.style.display = "none";
     });
 
-    // Close Modal when clicking outside of it
     window.addEventListener("click", (event) => {
         if (event.target === modal) {
             modal.style.display = "none";
         }
     });
 
-    // Close Modal using the "Fermer" button
     closeBtn.addEventListener("click", () => {
         modal.style.display = "none";
     });
 
-    // Toggle fields based on the selected amendment type
+    /**
+     * Toggle fields based on the selected amendment type
+     */
     const typeAmandement = document.getElementById("TypeAmandement");
     typeAmandement.addEventListener("change", () => {
         const selectedType = typeAmandement.value;
@@ -84,78 +94,155 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Form submission handling
+    /**
+     * Clear all validation error messages
+     */
+    function clearValidationMessages() {
+        document.querySelectorAll(".validation-message").forEach((message) => {
+            message.style.display = "none";
+        });
+    }
+
+    /**
+     * Validate date input (must not be in the future)
+     * @param {string} dateString - The date string to validate
+     * @returns {boolean} - True if valid, false otherwise
+     */
+    function isValidDate(dateString) {
+        const today = new Date().toISOString().split("T")[0];
+        return dateString <= today;
+    }
+
+    /**
+     * Validate that a date is after another date
+     * @param {string} start - The start date string
+     * @param {string} end - The end date string
+     * @returns {boolean} - True if valid, false otherwise
+     */
+    function isDateAfter(start, end) {
+        return new Date(end) > new Date(start);
+    }
+
+    /**
+     * Handle Modify Button Clicks
+     */
+    tableBody.addEventListener("click", (event) => {
+        if (event.target.classList.contains("modify-btn")) {
+            const amendmentId = event.target.dataset.id;
+
+            // Fetch amendment details from the backend
+            fetch(`../../Backend/Amandements/requetes_ajax/get_amendment.php?id=${amendmentId}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        const amendment = data.data;
+
+                        // Populate the form fields
+                        document.getElementById("NumAmandement").value = amendment.num_amd;
+                        document.getElementById("DateAmandement").value = amendment.date_sys;
+                        document.getElementById("TypeAmandement").value = amendment.type_amd_id || "";
+
+                        // Handle optional fields
+                        document.getElementById("DatePronongation").value = amendment.date_prorogation || "";
+                        document.getElementById("Montant").value = amendment.montant_amd || "";
+
+                        // Show/hide fields based on the selected type
+                        const selectedType = document.getElementById("TypeAmandement").value;
+                        datePronongationField.style.display = selectedType == 2 ? "none" : "block";
+                        montantField.style.display = selectedType == 3 ? "none" : "block";
+
+                        // Set the hidden amendment ID field
+                        let hiddenInput = document.querySelector('input[name="amendment_id"]');
+                        if (!hiddenInput) {
+                            hiddenInput = document.createElement("input");
+                            hiddenInput.type = "hidden";
+                            hiddenInput.name = "amendment_id";
+                            form.appendChild(hiddenInput);
+                        }
+                        hiddenInput.value = amendmentId;
+
+                        // Update modal title and show the modal
+                        document.querySelector("#modalTitle").textContent = "Modifier Amendement";
+                        modal.style.display = "flex";
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Erreur!",
+                            text: data.message,
+                        });
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching amendment details:", error);
+                    Swal.fire({
+                        icon: "error",
+                        title: "Erreur!",
+                        text: "Une erreur est survenue lors de la récupération des détails de l'amendement.",
+                    });
+                });
+        }
+    });
+
+    /**
+     * Form Submission Handling
+     */
     form.addEventListener("submit", (e) => {
         e.preventDefault();
 
         // Clear previous validation messages
-        document.querySelectorAll(".validation-message").forEach((message) => {
-            message.style.display = "none";
-        });
+        clearValidationMessages();
 
         let isValid = true;
 
-        // Validate Type Amandement
-        if (!typeAmandement || !typeAmandement.value) {
-            const message = document.querySelector("#TypeAmandement + .validation-message");
-            if (message) message.style.display = "block";
-            isValid = false;
+        /**
+         * Helper function to validate required fields
+         * @param {string} fieldId - The ID of the field to validate
+         */
+        function validateField(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                const message = document.querySelector(`#${fieldId} + .validation-message`);
+                if (message) message.style.display = "block";
+                isValid = false;
+            }
         }
 
-        // Validate Num Amandement
-        const numAmandement = document.getElementById("NumAmandement");
-        if (!numAmandement || !numAmandement.value) {
-            const message = document.querySelector("#NumAmandement + .validation-message");
-            if (message) message.style.display = "block";
-            isValid = false;
-        }
+        // Validate required fields
+        validateField("NumAmandement");
+        validateField("DateAmandement");
+        validateField("TypeAmandement");
 
-        // Validate Date Amandement
-        const dateAmandement = document.getElementById("DateAmandement");
-        if (!dateAmandement || !dateAmandement.value) {
-            const message = document.querySelector("#DateAmandement + .validation-message");
-            if (message) message.style.display = "block";
+        // Validate Date Amendement (must not be in the future)
+        const dateAmandement = document.getElementById("DateAmandement").value;
+        if (!isValidDate(dateAmandement)) {
+            document.querySelector("#DateAmandement + .validation-message").textContent =
+                "La date ne peut pas être dans le futur.";
+            document.querySelector("#DateAmandement + .validation-message").style.display = "block";
             isValid = false;
         }
 
         // Validate Date Pronongation (only if visible)
-        const datePronongation = document.getElementById("DatePronongation");
-        if (
-            datePronongationField.style.display !== "none" && // Check if field is visible
-            (!datePronongation || !datePronongation.value)
-        ) {
-            const message = document.querySelector("#DatePronongation + .validation-message");
-            if (message) message.style.display = "block";
-            isValid = false;
+        if (datePronongationField.style.display !== "none") {
+            validateField("DatePronongation");
+            const datePronongation = document.getElementById("DatePronongation").value;
+            if (dateAmandement && datePronongation && !isDateAfter(dateAmandement, datePronongation)) {
+                document.querySelector("#DatePronongation + .validation-message").textContent =
+                    "La date de prolongation doit être après la date de l'amendement.";
+                document.querySelector("#DatePronongation + .validation-message").style.display = "block";
+                isValid = false;
+            }
         }
 
         // Validate Montant (only if visible)
-        const montant = document.getElementById("Montant");
-        if (
-            montantField.style.display !== "none" && // Check if field is visible
-            (!montant || !montant.value)
-        ) {
-            const message = document.querySelector("#Montant + .validation-message");
-            if (message) message.style.display = "block";
-            isValid = false;
+        if (montantField.style.display !== "none") {
+            validateField("Montant");
         }
 
-        // Validate Document
+        // Validate Document (only for new amendments)
         const documentInput = document.getElementById("Document");
-        if (documentInput && documentInput.files.length === 0) {
+        if (!documentInput.files.length && !form.querySelector('input[name="amendment_id"]')) {
             const message = document.querySelector("#Document + .validation-message");
             if (message) message.style.display = "block";
-            isValid = false;
-        } else if (
-            documentInput &&
-            documentInput.files[0] &&
-            documentInput.files[0].type !== "application/pdf"
-        ) {
-            const message = document.querySelector("#Document + .validation-message");
-            if (message) {
-                message.textContent = "Le fichier doit être au format PDF.";
-                message.style.display = "block";
-            }
             isValid = false;
         }
 
@@ -164,8 +251,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // Prepare form data for AJAX submission
         const formData = new FormData(form);
 
-        // Send data to the server using Fetch API
-        fetch("process_form.php", {
+        // Determine whether to add or modify an amendment
+        const isModify = !!form.querySelector('input[name="amendment_id"]');
+        const url = isModify
+            ? "../../Backend/Amandements/requetes_ajax/update_amendment.php"
+            : "../../Backend/Amandements/add_amendment.php";
+
+
+        fetch(url, {
             method: "POST",
             body: formData,
         })
@@ -183,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     Swal.fire({
                         icon: "success",
                         title: "Succès!",
-                        text: "Amendement ajouté avec succès!",
+                        text: isModify ? "Amendement modifié avec succès!" : "Amendement ajouté avec succès!",
                     });
                 } else {
                     // Show error message with SweetAlert2
@@ -201,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 Swal.fire({
                     icon: "error",
                     title: "Erreur!",
-                    text: "Une erreur est survenue lors de l'ajout de l'amendement.",
+                    text: "Une erreur est survenue lors de l'ajout/modification de l'amendement.",
                 });
             });
     });
