@@ -1,243 +1,241 @@
-/**
- * Function to dynamically update the amendments table
- * @param {Array} amendments - List of amendments to display in the table
- */
-function updateTable(amendments) {
-    const tableBody = document.getElementById("amendementsTableBody");
-    tableBody.innerHTML = ""; // Clear existing rows
+document.addEventListener('DOMContentLoaded', async () => {
+    const tableBody = document.querySelector('#fournisseursTable tbody');
+    const searchInput = document.getElementById('searchInput');
+    const addBtn = document.getElementById('addFournisseurBtn');
+    const modal = document.getElementById('fournisseurModal');
+    const form = document.getElementById('fournisseurForm');
+    const closeModal = document.querySelector('.close-btn');
+    const formError = document.getElementById('formError');
+    const paysDropdown = document.getElementById('paysId');
 
-    amendments.forEach((amendment) => {
-        const row = document.createElement("tr");
+    let fournisseurs = []; // Stores fetched data
 
-        // Add cells for each column
-        row.innerHTML = `
-            <td>${amendment.id}</td>
-            <td>${amendment.num_amd}</td>
-            <td>${amendment.date_sys}</td>
-            <td>${amendment.date_prorogation || "N/A"}</td>
-            <td>${amendment.montant_amd || "N/A"}</td>
-            <td>${amendment.type_label || "Inconnu"}</td>
-            <td>
-                ${amendment.nom_document 
-                    ? `<a href="${amendment.document_path}" target="_blank">${amendment.nom_document}</a>` 
-                    : "Aucun document"}
-            </td>
-            <td>
-                <button class="modify-btn" data-id="${amendment.id}">Modifier</button>
-            </td>
-        `;
-
-        tableBody.appendChild(row);
-    });
-}
-
-// Initialize the table with initialAmendments passed from PHP
-if (initialAmendments && Array.isArray(initialAmendments)) {
-    updateTable(initialAmendments);
-}
-
-/**
- * Handle Form Submission (Add or Modify Amendment)
- */
-const form = document.getElementById("AmandementForm");
-form.addEventListener("submit", (e) => {
-    e.preventDefault();
-
-    // Clear previous validation messages
-    clearValidationMessages();
-
-    // Gather form data
-    const formData = new FormData(form);
-    const garantieId = formData.get("garantie_id");
-    const typeAmandement = formData.get("type_amd_id");
-    const numAmandement = formData.get("num_amd");
-    const dateAmandement = formData.get("date_sys");
-    const datePronongation = formData.get("date_prorogation");
-    const montantAmandement = formData.get("montant_amd");
-    const amendmentId = formData.get("amendment_id"); // For modification
-    const file = formData.get("document");
-
-    // Validate required fields
-    let isValid = true;
-
-    if (!typeAmandement) {
-        document.querySelector("#TypeAmandement + .validation-message").style.display = "block";
-        isValid = false;
-    }
-    if (!numAmandement) {
-        document.querySelector("#NumAmandement + .validation-message").style.display = "block";
-        isValid = false;
-    }
-    if (!dateAmandement) {
-        document.querySelector("#DateAmandement + .validation-message").style.display = "block";
-        isValid = false;
+    // Fetch fournisseurs from the database
+    async function fetchFournisseurs() {
+        try {
+            const response = await fetch('/PFE_SONATRACH_DP/Pages/Fournisseur/get_fournisseurs.php');
+            if (!response.ok) throw new Error('Server error');
+            const data = await response.json();
+            if (data.error) {
+                console.error('Error fetching fournisseurs:', data.error);
+                return;
+            }
+            fournisseurs = data.data; // Store fetched data
+            renderTable(fournisseurs);
+        } catch (error) {
+            console.error('Error fetching fournisseurs:', error);
+        }
     }
 
-    // Additional validation for specific types
-    if (typeAmandement == 2 && !montantAmandement) {
-        document.querySelector("#Montant + .validation-message").style.display = "block";
-        isValid = false;
-    }
-    if (typeAmandement == 3 && !datePronongation) {
-        document.querySelector("#DatePronongation + .validation-message").style.display = "block";
-        isValid = false;
-    }
-
-    if (!isValid) {
-        return;
-    }
-
-    // Determine the endpoint and method
-    const url = amendmentId
-        ? `update_amendment.php`
-        : `process_form.php`;
-    const method = amendmentId ? "POST" : "POST";
-
-    // Send the form data via AJAX
-    fetch(url, {
-        method: method,
-        body: formData,
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Succès!",
-                    text: amendmentId
-                        ? "L'amendement a été modifié avec succès."
-                        : "L'amendement a été ajouté avec succès.",
+    // Fetch countries from the backend
+    async function fetchCountries() {
+        try {
+            const response = await fetch('/PFE_SONATRACH_DP/Pages/Fournisseur/get_pays.php');
+            if (!response.ok) throw new Error('Server error');
+            const data = await response.json();
+            if (data.status === 'success') {
+                // Clear existing options
+                paysDropdown.innerHTML = '';
+                // Add default placeholder option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Sélectionnez un pays';
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                paysDropdown.appendChild(defaultOption);
+                // Populate the dropdown with countries
+                data.data.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country.id; // Use the ID as the value
+                    option.textContent = country.label; // Display the label
+                    paysDropdown.appendChild(option);
                 });
-
-                // Update the table with the new data
-                updateTable(data.data);
-
-                // Close the modal
-                closeModal();
             } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "Erreur!",
-                    text: data.message,
+                console.error('Error fetching countries:', data.message);
+            }
+        } catch (error) {
+            console.error('Error fetching countries:', error);
+        }
+    }
+
+    // Call the functions to populate data
+    fetchFournisseurs();
+    fetchCountries();
+
+    // Form submission (Add/Update fournisseur)
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        formError.style.display = 'none'; // Reset general error message
+
+        // Clear previous validation messages
+        document.querySelectorAll('.validation-message').forEach(message => {
+            message.style.display = 'none'; // Hide all validation messages initially
+        });
+
+        // Get input values
+        const id = document.getElementById('fournisseurId').value;
+        const codeFournisseur = document.getElementById('codeFournisseur').value.trim();
+        const nomFournisseur = document.getElementById('nomFournisseur').value.trim();
+        const raisonSociale = document.getElementById('raisonSociale').value.trim();
+        const paysId = document.getElementById('paysId').value;
+
+        // Validation flags
+        let isValid = true;
+
+        // Validate Code Fournisseur
+        if (!codeFournisseur) {
+            document.querySelector('#codeFournisseur + .validation-message').style.display = 'block';
+            isValid = false;
+        }
+
+        // Validate Nom Fournisseur
+        if (!nomFournisseur) {
+            document.querySelector('#nomFournisseur + .validation-message').style.display = 'block';
+            isValid = false;
+        }
+
+        // Validate raisonSociale
+        if (!raisonSociale) {
+            document.querySelector('#raisonSociale + .validation-message').style.display = 'block';
+            isValid = false;
+        }
+
+        // Validate paysId
+        if (!paysId) {
+            document.querySelector('#paysId + .validation-message').style.display = 'block';
+            isValid = false;
+        }
+
+        if (!isValid) return; // Stop if validation fails
+
+        try {
+            let response;
+            let requestData = {
+                id: id || null, // Include ID for update, or null for new entry
+                code_fournisseur: codeFournisseur,
+                nom_fournisseur: nomFournisseur,
+                raison_sociale: raisonSociale || '', // Send empty string if not filled
+                pays_id: paysId || '' // Send empty string if not filled
+            };
+
+            if (id) {
+                response = await fetch('/PFE_SONATRACH_DP/Pages/Fournisseur/update_fournisseur.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+            } else {
+                response = await fetch('/PFE_SONATRACH_DP/Pages/Fournisseur/add_fournisseur.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
                 });
             }
-        })
-        .catch((error) => {
-            console.error("Error submitting form:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Erreur!",
-                text: "Une erreur est survenue lors de la soumission du formulaire.",
+
+            const result = await response.json();
+            console.log("Server Response:", result); // Debugging log
+
+            if (result.status === 'success') {
+                showNotification('success', 'Succès!', 'Le fournisseur a été enregistré avec succès.');
+                fetchFournisseurs(); // Refresh the table
+                modal.style.display = 'none'; // Close modal after success
+                form.reset(); // Reset form fields
+            } else {
+                // Handle duplicate entry error
+                if (result.message && result.message.includes('Duplicate entry')) {
+                    showNotification('error', 'Erreur!', 'Le code fournisseur existe déjà. Veuillez choisir un autre code.');
+                } else {
+                    showNotification('error', 'Erreur!', result.message || 'Une erreur est survenue. Veuillez réessayer.');
+                }
+            }
+        } catch (error) {
+            showNotification('error', 'Erreur!', 'Une erreur est survenue. Veuillez réessayer.');
+        }
+    });
+
+    // Search fournisseurs
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filtered = fournisseurs.filter(f =>
+            f.code_fournisseur.toLowerCase().includes(searchTerm) ||
+            f.nom_fournisseur.toLowerCase().includes(searchTerm) ||
+            f.raison_sociale?.toLowerCase().includes(searchTerm) ||
+            f.pays_label?.toLowerCase().includes(searchTerm)
+        );
+        renderTable(filtered);
+    });
+
+    // Open Add Modal
+    addBtn.addEventListener('click', () => {
+        form.reset();
+        formError.style.display = 'none';
+        document.getElementById('modalTitle').textContent = 'Ajouter Fournisseur';
+        document.getElementById('fournisseurId').value = '';
+        modal.style.display = 'flex';
+    });
+
+    // Close Modal
+    closeModal.addEventListener('click', () => modal.style.display = 'none');
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+
+    // Render Table
+    function renderTable(data) {
+        tableBody.innerHTML = data.map(f => `
+            <tr>
+                <td>${f.id}</td>
+                <td>${f.code_fournisseur}</td>
+                <td>${f.nom_fournisseur}</td>
+                <td>${f.raison_sociale || '-'}</td>
+                <td>${f.pays_label || '-'}</td> <!-- Display the country name -->
+                <td>
+                    <button class="btn btn-edit" data-id="${f.id}">
+                        <i class='bx bx-edit'></i> Modifier
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Attach Edit Handlers
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.target.closest('button').dataset.id;
+                const f = fournisseurs.find(f => f.id == id);
+
+                console.log("Fournisseur Data:", f); // Log the fournisseur object
+
+                document.getElementById('modalTitle').textContent = 'Modifier Fournisseur';
+                document.getElementById('fournisseurId').value = f.id;
+                document.getElementById('codeFournisseur').value = f.code_fournisseur;
+                document.getElementById('nomFournisseur').value = f.nom_fournisseur;
+                document.getElementById('raisonSociale').value = f.raison_sociale || '';
+
+                // Ensure the dropdown is populated
+                const paysDropdown = document.getElementById('paysId');
+                if (paysDropdown.options.length <= 1) { // Check if only the placeholder option exists
+                    await fetchCountries(); // Fetch countries if not already loaded
+                }
+
+                // Set the selected country in the dropdown
+                if (f.pays_id && paysDropdown.querySelector(`option[value="${f.pays_id}"]`)) {
+                    paysDropdown.value = f.pays_id; // Set the value if the option exists
+                } else {
+                    paysDropdown.value = ''; // Default to the placeholder option
+                }
+
+                modal.style.display = 'flex';
             });
         });
-});
-
-/**
- * Handle Modify Button Clicks
- */
-const tableBody = document.getElementById("amendementsTableBody");
-tableBody.addEventListener("click", (event) => {
-    if (event.target.classList.contains("modify-btn")) {
-        const amendmentId = event.target.dataset.id;
-
-        // Fetch amendment details from the backend
-        fetch(`get_amendment.php?id=${amendmentId}`)
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.success) {
-                    const amendment = data.data;
-
-                    // Populate the form fields
-                    document.getElementById("NumAmandement").value = amendment.num_amd;
-                    document.getElementById("DateAmandement").value = amendment.date_sys;
-                    document.getElementById("TypeAmandement").value = amendment.type_amd_id || "";
-                    document.getElementById("DatePronongation").value = amendment.date_prorogation || "";
-                    document.getElementById("Montant").value = amendment.montant_amd || "";
-
-                    // Handle optional document field
-                    const documentField = document.getElementById("Document");
-                    documentField.value = ""; // Reset file input
-
-                    // Add hidden input for amendment ID if it doesn't exist
-                    let hiddenInput = document.querySelector('input[name="amendment_id"]');
-                    if (!hiddenInput) {
-                        hiddenInput = document.createElement("input");
-                        hiddenInput.type = "hidden";
-                        hiddenInput.name = "amendment_id";
-                        document.getElementById("AmandementForm").appendChild(hiddenInput);
-                    }
-                    hiddenInput.value = amendmentId;
-
-                    // Update modal title and show the modal
-                    document.querySelector("#modalTitle").textContent = "Modifier Amendement";
-                    document.getElementById("AmandementModal").style.display = "flex";
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Erreur!",
-                        text: data.message,
-                    });
-                }
-            })
-            .catch((error) => {
-                console.error("Error fetching amendment details:", error);
-                Swal.fire({
-                    icon: "error",
-                    title: "Erreur!",
-                    text: "Une erreur est survenue lors de la récupération des détails de l'amendement.",
-                });
-            });
     }
-});
 
-/**
- * Toggle fields based on the selected amendment type
- */
-const typeAmandement = document.getElementById("TypeAmandement");
-const datePronongationField = document.querySelector("#DatePronongation").parentElement;
-const montantField = document.querySelector("#Montant").parentElement;
-
-typeAmandement.addEventListener("change", () => {
-    const selectedType = typeAmandement.value;
-
-    // Reset visibility
-    datePronongationField.style.display = "block";
-    montantField.style.display = "block";
-
-    // Hide fields based on the selected type
-    if (selectedType == 2) {
-        // Augmentation Montant
-        datePronongationField.style.display = "none";
-    } else if (selectedType == 3) {
-        // Prolongation
-        montantField.style.display = "none";
-    }
-});
-
-/**
- * Clear all validation error messages
- */
-function clearValidationMessages() {
-    document.querySelectorAll(".validation-message").forEach((message) => {
-        message.style.display = "none";
-    });
-}
-
-/**
- * Close the modal
- */
-function closeModal() {
-    document.getElementById("AmandementModal").style.display = "none";
-    document.getElementById("AmandementForm").reset();
-    clearValidationMessages();
-}
-
-// Close modal when clicking the close button or outside the modal
-document.querySelector(".close-btn").addEventListener("click", closeModal);
-document.getElementById("close").addEventListener("click", closeModal);
-window.addEventListener("click", (event) => {
-    const modal = document.getElementById("AmandementModal");
-    if (event.target === modal) {
-        closeModal();
+    // Helper function to display notifications
+    function showNotification(icon, title, text) {
+        Swal.fire({
+            icon,
+            title,
+            text,
+            confirmButtonText: 'OK'
+        });
     }
 });
