@@ -1,6 +1,6 @@
 <?php
 require_once("../../db_connection/db_conn.php");
-$pdo =  require_once("../../db_connection/db_conn.php");
+
 
 try {
 
