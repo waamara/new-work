@@ -1,53 +1,44 @@
 <?php
-// Database connection details
-$host = 'localhost';
-$dbname = 'db_sonatrach_dp';
-$username = 'root';
-$password = '';
+require_once("../../db_connection/db_conn.php");
+$pdo =  require_once("../../db_connection/db_conn.php");
 
 try {
-    // Create a PDO connection
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Get raw POST data
-    $rawData = file_get_contents('php://input');
-    $data = json_decode($rawData, true);
+    // Get data from POST request
+    $data = json_decode(file_get_contents('php://input'), true);
 
-    if (!$data || !array_key_exists('id', $data) || 
-        !array_key_exists('code_fournisseur', $data) || 
-        !array_key_exists('nom_fournisseur', $data) || 
-        !array_key_exists('raison_sociale', $data) || 
-        !array_key_exists('pays_id', $data)) {
-        echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
+    // Validate required fields
+    if (empty($data['id']) || empty($data['code_fournisseur']) || empty($data['nom_fournisseur'])) {
+        echo json_encode(['status' => 'error', 'message' => 'Required fields missing']);
         exit;
     }
 
-    $id = $data['id'];
-    $codeFournisseur = $data['code_fournisseur'];
-    $nomFournisseur = $data['nom_fournisseur'];
-    $raisonSociale = $data['raison_sociale'];
-    $paysId = $data['pays_id'];
-
     // Update query
-    $stmt = $pdo->prepare("UPDATE fournisseur 
-                            SET  code_fournisseur = :code_fournisseur, 
-                                nom_fournisseur = :nom_fournisseur, 
-                                raison_sociale = :raison_sociale, 
-                                pays_id = :pays_id 
-                            WHERE id = :id");
+    $stmt = $pdo->prepare("
+        UPDATE fournisseur 
+        SET code_fournisseur = :code_fournisseur, 
+            nom_fournisseur = :nom_fournisseur, 
+            raison_sociale = :raison_sociale, 
+            pays_id = :pays_id 
+        WHERE id = :id
+    ");
     $stmt->execute([
-        'id' => $id,
-        'code_fournisseur' => $codeFournisseur,
-        'nom_fournisseur' => $nomFournisseur,
-        'raison_sociale' => $raisonSociale,
-        'pays_id' => $paysId
+        ':id' => $data['id'],
+        ':code_fournisseur' => $data['code_fournisseur'],
+        ':nom_fournisseur' => $data['nom_fournisseur'],
+        ':raison_sociale' => $data['raison_sociale'] ?? '',
+        ':pays_id' => $data['pays_id'] ?? ''
     ]);
 
     // Return success response
     echo json_encode(['status' => 'success', 'message' => 'Fournisseur modifié avec succès']);
-} catch (Exception $e) {
-    // Return error response
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+} catch (PDOException $e) {
+    // Check for duplicate entry error
+    if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+        echo json_encode(['status' => 'error', 'message' => 'Le code fournisseur existe déjà. Veuillez choisir un autre code.']);
+    } else {
+        // Handle other errors
+        echo json_encode(['status' => 'error', 'message' => 'Une erreur est survenue. Veuillez réessayer.']);
+    }
 }
 ?>
